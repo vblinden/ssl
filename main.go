@@ -8,16 +8,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/asdgo/asdgo"
+	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	asdgo.New(asdgo.Config{
-		CsrfExempts: []string{"/"},
-	})
+	e := echo.New()
 
-	asdgo.Router().Get("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, strings.Trim(`
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, strings.Trim(`
 microservice to get x509 certificate info
 
 post a x509 certificate in pem format to the endpoint
@@ -29,35 +27,33 @@ example:
 		`, "\n"))
 	})
 
-	asdgo.Router().Post("/", func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
+	e.POST("/", func(c echo.Context) error {
+		body, err := io.ReadAll(c.Request().Body)
+
 		if err != nil {
-			http.Error(w, "error reading request body", http.StatusInternalServerError)
-			return
+			return c.String(http.StatusInternalServerError, "error reading request body")
 		}
+
 		block, _ := pem.Decode(body)
 		if block == nil {
-			http.Error(w, "error parsing certificate", http.StatusBadRequest)
-			return
+			return c.String(http.StatusBadRequest, "error parsing certificate")
 		}
 
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("error parsing certificate: %s", err), http.StatusBadRequest)
-			return
+			return c.String(http.StatusBadRequest, fmt.Sprintf("error parsing certificate: %s", err))
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(
-			w,
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		return c.String(http.StatusOK, fmt.Sprintf(
 			`{"subject": "%s","issuer": "%s","not_before": "%s","not_after": "%s"}`,
 			cert.Subject.CommonName,
 			cert.Issuer.CommonName,
 			cert.NotBefore,
 			cert.NotAfter,
-		)
+		))
 	})
 
 	fmt.Println("starting server on :3000")
-	http.ListenAndServe(":3000", asdgo.Router())
+	e.Logger.Fatal(e.Start(":3000"))
 }
