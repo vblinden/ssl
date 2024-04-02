@@ -24,8 +24,7 @@ post a x509 certificate in pem format to the endpoint
 example:
   $ curl -X POST -d "$(cat cert.pem)" https://ssl.vblinden.dev
   { "subject": "...", "issuer": "...", "not_before": "...", "not_after": "..."}
-
-		`, "\n"))
+`, "\n"))
 	})
 
 	asd.POST("/", func(c echo.Context) error {
