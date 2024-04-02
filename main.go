@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/asdgo/asdgo"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	e := echo.New()
+	asd := asdgo.New(&asdgo.Config{})
 
-	e.GET("/", func(c echo.Context) error {
+	asd.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, strings.Trim(`
 microservice to get x509 certificate info
 
@@ -27,7 +28,7 @@ example:
 		`, "\n"))
 	})
 
-	e.POST("/", func(c echo.Context) error {
+	asd.POST("/", func(c echo.Context) error {
 		body, err := io.ReadAll(c.Request().Body)
 
 		if err != nil {
@@ -54,6 +55,5 @@ example:
 		))
 	})
 
-	fmt.Println("starting server on :3000")
-	e.Logger.Fatal(e.Start(":3000"))
+	asd.Logger.Fatal(asd.Start(":3000"))
 }
